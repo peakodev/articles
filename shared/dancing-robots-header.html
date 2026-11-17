@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dancing Robots Header</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+  body{margin:0;background:#090e22;color:#eef1fb;font-family:"Golos Text",system-ui,sans-serif;line-height:1.55}
+  .howto{max-width:760px;margin:0 auto;padding:28px 16px 56px}
+  .howto h2{font-family:"Unbounded",sans-serif;font-weight:500;font-size:1.05rem}
+  .howto code{background:#121935;border:1px solid #262f57;border-radius:6px;padding:1px 6px;font-size:.9em}
+  .howto li{margin:6px 0}
+</style>
+</head>
+<body>
+
+<!-- HEADER:BEGIN
+     Reusable animated header: nine humanoid robots dancing in sync on a stage
+     of blue and red light cubes (drawn on canvas, no image files).
+     Copy everything between HEADER:BEGIN and HEADER:END into any page.
+     Edit the three text lines inside .dr-text. Needs no other CSS or JS. -->
+<style>
+  .dr-hero{position:relative;overflow:hidden;background:#060a20;color:#fff;
+    font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif}
+  .dr-hero canvas{display:block;width:100%;height:clamp(340px,46vw,430px)}
+  .dr-hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent 48%,rgba(6,10,32,.86) 98%),
+               linear-gradient(90deg,rgba(6,10,32,.86) 0%,transparent 46%)}
+  @media (max-width:700px){ .dr-hero::after{background:linear-gradient(180deg,transparent 46%,rgba(6,10,32,.86) 84%)} }
+  .dr-text{position:absolute;inset:auto 0 0 0;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 22px}
+  .dr-eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.78);font-weight:600}
+  .dr-title{font-family:"Unbounded","Golos Text",system-ui,sans-serif;font-weight:700;
+    font-size:clamp(1.9rem,6.4vw,3.4rem);line-height:1.05;margin:.25em 0 .3em;text-wrap:balance}
+  .dr-sub{color:rgba(255,255,255,.78);max-width:34em;margin:0;font-size:.98rem}
+</style>
+<header class="dr-hero">
+  <canvas class="dr-stage" role="img" aria-label="Анімація: людиноподібні роботи синхронно танцюють на сцені на тлі синіх і червоних світлових кубів"></canvas>
+  <div class="dr-text">
+    <div class="dr-eyebrow">Web Summit 2026 · Лісабон</div>
+    <h1 class="dr-title">Заголовок сторінки</h1>
+    <p class="dr-sub">Один рядок пояснення під заголовком.</p>
+  </div>
+</header>
+<script>
+(function(){
+  const cv=document.querySelector('canvas.dr-stage'),g=cv.getContext('2d');
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W=0,H=0;
+  const hash=n=>{const x=Math.sin(n*127.1)*43758.5453;return x-Math.floor(x)};
+  function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);
+    W=r.width;H=r.height;cv.width=Math.round(W*d);cv.height=Math.round(H*d);g.setTransform(d,0,0,d,0,0)}
+  function limb(ax,ay,bx,by,w,c){g.strokeStyle=c;g.lineWidth=w;g.lineCap='round';g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke()}
+  function rr(x,y,w,h,r,c){g.fillStyle=c;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
+  function backdrop(t){
+    g.fillStyle='#060a20';g.fillRect(0,0,W,H);
+    const c=Math.max(34,W/18),gap=c*.1,fy=H*.6,beat=.5+.5*Math.cos(Math.PI*2*t);
+    for(let j=0;j*c<fy;j++)for(let i=0;i*c<W;i++){
+      const h=hash(i*31+j*17),red=hash(i*7+j*3+Math.floor(t/8))>.78;
+      const a=.28+.5*h*(.55+.45*beat)+(red?.15:0);
+      g.fillStyle=red?`rgba(232,80,63,${a})`:`rgba(40,96,235,${a})`;
+      g.fillRect(i*c+gap,j*c+gap,c-2*gap,c-2*gap);
+    }
+    const fl=g.createLinearGradient(0,fy,0,H);fl.addColorStop(0,'#0c1440');fl.addColorStop(1,'#05081a');
+    g.fillStyle=fl;g.fillRect(0,fy,W,H-fy);
+    g.fillStyle='rgba(120,160,255,.35)';g.fillRect(0,fy,W,2);
+  }
+  function robot(x,y,s,t){
+    const m=Math.floor(t/8)%3,sn=Math.sin(Math.PI*t),q=Math.tanh(3*sn),bob=.5-.5*Math.cos(Math.PI*2*t);
+    let sway=0,squat=.06*bob,stepX=0,lift=[0,0],arm;
+    if(m===0){sway=.09*sn;arm=sd=>{const u=2.3+sd*.5*sn;return[u,u+.5*Math.sin(Math.PI*t+1)]}}
+    else if(m===1){squat=.16*bob;arm=sd=>[1.25,1.25+1.5*(.5+.5*Math.sin(Math.PI*2*t+(sd>0?0:Math.PI)))]}
+    else{stepX=.22*q;lift=[Math.max(0,sn)*.12,Math.max(0,-sn)*.12];arm=sd=>[1.57,1.57+sd*1.45*q]}
+    const cx=x+(sway+stepX)*s,hipY=y-s*(1-squat),shY=hipY-.7*s,body='#e9edf7',dark='#2a3358';
+    g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(x+stepX*s,y+.03*s,.5*s,.07*s,0,0,7);g.fill();
+    [-1,1].forEach((sd,k)=>{ // legs
+      const hx=cx+sd*.13*s,fx=x+stepX*s*.6+sd*.2*s,fyy=y-lift[k]*s,l=.5*s;
+      const dx=fx-hx,dy=fyy-hipY,d=Math.min(Math.hypot(dx,dy),2*l-.01),h=Math.sqrt(l*l-d*d/4);
+      const kx=hx+dx/2+sd*h*(dy/d)*.9,ky=hipY+dy/2-sd*h*(dx/d)*.9;
+      limb(hx,hipY,kx,ky,.15*s,body);limb(kx,ky,fx,fyy,.13*s,body);
+      rr(fx-.12*s,fyy-.05*s,.24*s,.1*s,.04*s,dark);
+      g.fillStyle=dark;g.beginPath();g.arc(kx,ky,.05*s,0,7);g.fill();
+    });
+    rr(cx-.24*s,shY-.04*s,.48*s,.78*s,.12*s,body);          // torso
+    rr(cx-.13*s,shY+.1*s,.26*s,.16*s,.05*s,dark);
+    g.fillStyle='#4f8bff';g.beginPath();g.arc(cx,shY+.18*s,.035*s,0,7);g.fill();
+    [-1,1].forEach(sd=>{ // arms
+      const[a,b]=arm(sd),sx=cx+sd*.28*s,L=.34*s;
+      const ex=sx+sd*Math.sin(a)*L,ey=shY+.04*s+Math.cos(a)*L,hx=ex+sd*Math.sin(b)*L,hy=ey+Math.cos(b)*L;
+      limb(sx,shY+.04*s,ex,ey,.12*s,body);limb(ex,ey,hx,hy,.1*s,body);
+      g.fillStyle=dark;g.beginPath();g.arc(ex,ey,.045*s,0,7);g.arc(hx,hy,.06*s,0,7);g.fill();
+    });
+    const hx0=cx+sway*s*.5;                                   // head
+    rr(hx0-.18*s,shY-.4*s,.36*s,.3*s,.1*s,body);
+    rr(hx0-.14*s,shY-.33*s,.28*s,.13*s,.06*s,'#10173a');
+    g.fillStyle='#6fb0ff';g.beginPath();g.arc(hx0-.06*s,shY-.265*s,.025*s,0,7);g.arc(hx0+.06*s,shY-.265*s,.025*s,0,7);g.fill();
+  }
+  function frame(ms){
+    const t=ms/1000*1.9;backdrop(t);
+    const wide=W>700,mid=wide?W*.64:W*.5,span=wide?Math.min(W*.6,620):W*.92;
+    const s=Math.min(H*.3,span/5.2),gy=wide?H*.86:H*.58;
+    for(let i=0;i<5;i++)robot(mid+(i-2)*span/5,gy-s*.34,s*.78,t);
+    for(let i=0;i<4;i++)robot(mid+(i-1.5)*span/4.4,gy,s,t);
+    if(!still)requestAnimationFrame(frame);
+  }
+  size();new ResizeObserver(()=>{size();if(still)frame(300)}).observe(cv);
+  if(still)frame(300);else requestAnimationFrame(frame);
+})();
+</script>
+<!-- HEADER:END -->
+
+<div class="howto">
+  <h2>Як використати цей заголовок</h2>
+  <ol>
+    <li>Відкрий код цієї сторінки і скопіюй усе між <code>HEADER:BEGIN</code> та <code>HEADER:END</code>.</li>
+    <li>Встав блок на початок <code>&lt;body&gt;</code> своєї сторінки.</li>
+    <li>Зміни три рядки тексту всередині <code>.dr-text</code>: надзаголовок, заголовок і підпис.</li>
+    <li>Шрифти Unbounded і Golos Text підключаються з Google Fonts (рядок <code>&lt;link&gt;</code> у <code>&lt;head&gt;</code>). Без них заголовок теж працює, просто системним шрифтом.</li>
+  </ol>
+  <p>Анімація намальована на canvas, файлів-картинок не потребує. Якщо в системі ввімкнено «зменшити рух», показується нерухомий кадр.</p>
+</div>
+</body>
+</html>
