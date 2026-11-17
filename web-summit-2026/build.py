@@ -23,6 +23,7 @@ def fig(n, cap, cls='half', pos='', extra=''):
     return (f'<figure class="{cls}">{extra}<img src="{img(n)}" alt="{cap}" loading="lazy"{style}>'
             f'<figcaption>{cap}</figcaption></figure>')
 
+favicon = 'data:image/svg+xml;base64,' + base64.b64encode((HERE.parent / 'shared' / 'robot-favicon.svg').read_bytes()).decode()
 header = re.search(r'<!-- HEADER:BEGIN.*?-->(.*?)<!-- HEADER:END -->',
                    HEADER_FILE.read_text(encoding='utf-8'), re.S).group(1)
 header = (header.replace('Заголовок сторінки', 'Лісабон, роботи і шторм')
@@ -35,6 +36,7 @@ page = f'''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Лісабон, роботи і шторм — Web Summit 2026</title>
+<link rel="icon" type="image/svg+xml" href="{favicon}">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: animated stage header, then a four-day diary; the cancelled day is the dark break in the middle. */
