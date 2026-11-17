@@ -36,6 +36,19 @@ page = f'''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Лісабон, роботи і шторм — Web Summit 2026</title>
+<meta name="description" content="Web Summit 2026 очима учасника: Лісабон до саміту, день роботів, скасована через шторм «Шарль» середа і фото з телефона.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://peakodev.github.io/articles/web-summit-2026/">
+<meta property="og:title" content="Лісабон, роботи і шторм">
+<meta property="og:description" content="Web Summit 2026 очима учасника: Лісабон до саміту, день роботів, скасована через шторм «Шарль» середа і фото з телефона.">
+<meta property="og:image" content="https://peakodev.github.io/articles/web-summit-2026/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="uk_UA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Лісабон, роботи і шторм">
+<meta name="twitter:description" content="Web Summit 2026 очима учасника: Лісабон до саміту, день роботів, скасована через шторм «Шарль» середа і фото з телефона.">
+<meta name="twitter:image" content="https://peakodev.github.io/articles/web-summit-2026/og.jpg">
 <link rel="icon" type="image/svg+xml" href="{favicon}">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&display=swap">
 <style>
