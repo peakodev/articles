@@ -18,9 +18,9 @@ def img(n, long_edge=1000, q=70):
     buf = io.BytesIO(); im.save(buf, 'JPEG', quality=q, optimize=True)   # no EXIF/GPS kept
     return 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
 
-def fig(n, cap, cls='half', pos=''):
+def fig(n, cap, cls='half', pos='', extra=''):
     style = f' style="object-position:{pos}"' if pos else ''
-    return (f'<figure class="{cls}"><img src="{img(n)}" alt="{cap}" loading="lazy"{style}>'
+    return (f'<figure class="{cls}">{extra}<img src="{img(n)}" alt="{cap}" loading="lazy"{style}>'
             f'<figcaption>{cap}</figcaption></figure>')
 
 header = re.search(r'<!-- HEADER:BEGIN.*?-->(.*?)<!-- HEADER:END -->',
@@ -48,7 +48,7 @@ page = f'''<!DOCTYPE html>
   --bg:#090e22; --surface:#121935; --ink:#eef1fb; --muted:#9aa3c6; --line:#262f57;
   --blue:#7d9bff; --coral:#ff806c; --storm-bg:#050818; color-scheme:dark }} }}
 *{{box-sizing:border-box}}
-body{{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}}
+body{{margin:0;overflow-x:clip;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}}
 a{{color:var(--blue)}}
 .wrap{{max-width:860px;margin:0 auto;padding-left:16px;padding-right:16px}}
 main{{padding-block:28px 64px;display:flex;flex-direction:column;gap:44px}}
@@ -63,13 +63,15 @@ h2{{font-family:var(--display);font-weight:500;font-size:clamp(1.3rem,3.6vw,1.75
 .facts b{{display:block;font-family:var(--display);font-weight:700;font-size:1.25rem}}
 .facts span{{font-size:.84rem;color:var(--muted)}}
 .grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
-figure{{margin:0;min-width:0}}
+figure{{margin:0;min-width:0;position:relative}}
+.eggbox{{position:relative}}
+.bye{{position:relative;display:flex;align-items:end;min-height:84px;padding:0 0 10px 100px;border-bottom:2px solid var(--line);color:var(--muted);font-size:.95rem}}
 figure img{{display:block;width:100%;object-fit:cover;border-radius:12px;background:var(--line)}}
 figure.wide{{grid-column:1/-1}}
 figure.wide img{{aspect-ratio:16/9}}
 figure.half img{{aspect-ratio:4/5}}
 figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
-.storm{{background:var(--storm-bg);color:var(--storm-ink);border-radius:18px;padding:26px 22px}}
+.storm{{position:relative;background:var(--storm-bg);color:var(--storm-ink);border-radius:18px;padding:26px 22px}}
 .storm .day{{color:#ff9a8a}}
 .storm figcaption,.storm .src{{color:var(--storm-muted)}}
 .storm ul{{margin:0;padding-left:1.1em;max-width:62ch}}
@@ -86,13 +88,14 @@ figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
 <main class="wrap">
   <p class="lead">У програмі Web Summit 2026 було чотири дні: вечір відкриття та три дні павільйонів. На ділі вийшло три, бо середу в Лісабоні забрав шторм. Нижче коротко про те, що було на саміті, і мої фото з телефона.</p>
 
+  <div class="eggbox"><span class="dr-egg" data-pose="sit" data-acc="antenna" data-size="24" style="right:46px;top:0"></span>
   <div class="facts">
     <div><b>≈ 70 000</b><span>учасників</span></div>
     <div><b>164</b><span>країни</span></div>
     <div><b>900</b><span>спікерів</span></div>
     <div><b>2 000+</b><span>стартапів</span></div>
     <div><b>1 день</b><span>скасовано через шторм</span></div>
-  </div>
+  </div></div>
 
   <section>
     <div class="day">Понеділок, 9 листопада</div>
@@ -110,7 +113,7 @@ figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
 
   <section>
     <div class="day">Вівторок, 10 листопада</div>
-    <h2>День роботів</h2>
+    <h2 class="eggbox">День роботів<span class="dr-egg" data-pose="coffee" data-acc="phones" data-size="22" style="right:34px;bottom:0"></span></h2>
     <p>Павільйони FIL цього року більше скидалися на виставку робототехніки, ніж на конференцію про веб. Робопси ходили просто між людьми, гуманоїди танцювали в колі глядачів, а на Центральній сцені, за повідомленнями преси, дев’ять роботів AgiBot станцювали синхронно.</p>
     <p>Каву мені теж зварив робот: бариста Ella на стенді Intel Robotics, замовлення № 331, американо на ім’я Nazar. А в застосунку саміту до обіду назбиралося 17 нових запрошень на зустрічі.</p>
     <div class="grid">
@@ -125,7 +128,7 @@ figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
     </div>
   </section>
 
-  <section class="storm">
+  <section class="storm"><span class="dr-egg" data-pose="umbrella" data-size="24" style="right:60px;top:0"></span>
     <div class="day">Середа, 11 листопада</div>
     <h2>День, якого не було</h2>
     <p>Увечері 10 листопада організатори оголосили: програму середи скасовано. Причина — шторм «Шарль».</p>
@@ -149,7 +152,7 @@ figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
     <div class="grid">
       {fig('066','На сцені Web Summit')}
       {fig('064','Робот Galbot для автономного складу')}
-      {fig('083','Стенд Invest Azores із рибами під стелею','wide','50% 40%')}
+      {fig('083','Стенд Invest Azores із рибами під стелею','wide','50% 40%','<span class="dr-egg" data-pose="peek" data-acc="shades" data-size="28" style="left:74%;top:0"></span>')}
       {fig('089','Стенд стартапу із супутниковою аналітикою, зона BETA')}
       {fig('085','Зона нетворкінгу між павільйонами')}
     </div>
@@ -163,6 +166,8 @@ figcaption{{font-size:.84rem;color:var(--muted);margin-top:6px}}
       <li><strong>Погода забрала один із трьох днів павільйонів.</strong> Найважливіші зустрічі варто ставити на перший день.</li>
     </ul>
   </section>
+
+  <div class="bye"><span class="dr-egg" data-pose="wave" data-acc="hat" data-size="26" style="left:44px;bottom:0"></span><p>Дякую, що дочитали. Роботів на цій сторінці можна хапати й тягати куди завгодно: клік — робот щось скаже, подвійний клік поверне його на місце.</p></div>
 
   <div class="sources">
     Фото автора, iPhone. Факти про саміт і шторм узято з публікацій:

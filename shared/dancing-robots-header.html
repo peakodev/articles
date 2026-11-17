@@ -6,36 +6,55 @@
 <title>Dancing Robots Header</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&display=swap">
 <style>
-  body{margin:0;background:#090e22;color:#eef1fb;font-family:"Golos Text",system-ui,sans-serif;line-height:1.55}
+  body{margin:0;background:#090e22;color:#eef1fb;font-family:"Golos Text",system-ui,sans-serif;line-height:1.55;overflow-x:clip}
   .howto{max-width:760px;margin:0 auto;padding:28px 16px 56px}
   .howto h2{font-family:"Unbounded",sans-serif;font-weight:500;font-size:1.05rem}
   .howto code{background:#121935;border:1px solid #262f57;border-radius:6px;padding:1px 6px;font-size:.9em}
   .howto li{margin:6px 0}
+  .demo{position:relative;border-bottom:2px solid #262f57;padding:0 0 0 96px;min-height:84px;display:flex;align-items:end}
 </style>
 </head>
 <body>
 
 <!-- HEADER:BEGIN
-     Reusable animated header: nine humanoid robots dancing in sync on a stage
-     of blue and red light cubes (drawn on canvas, no image files).
-     Copy everything between HEADER:BEGIN and HEADER:END into any page.
-     Edit the three text lines inside .dr-text. Needs no other CSS or JS. -->
+     Reusable animated header: humanoid robots dancing on a stage of blue and
+     red light cubes. Nine robots beside the title on desktop, three above it
+     on phones. Every robot can be grabbed and dragged anywhere on the page;
+     a click makes it talk, a double click sends it home.
+     Copy everything between HEADER:BEGIN and HEADER:END into any page and
+     edit the three text lines inside .dr-text. Needs no other CSS or JS.
+
+     Easter eggs: put <span class="dr-egg" data-pose="wave" data-acc="hat"
+     data-size="26" style="left:40px;bottom:0"></span> inside any element with
+     position:relative. The robot's feet stand on that point.
+       data-pose: dance | wave | coffee | umbrella | sit | peek
+       data-acc:  antenna | shades | hat | phones | bow   (optional)
+       data-size: robot scale in px (its height is about 2.2 x size)        -->
 <style>
-  .dr-hero{position:relative;overflow:hidden;background:#060a20;color:#fff;
+  .dr-hero{position:relative;background:#060a20;color:#fff;
     font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif}
-  .dr-hero canvas{display:block;width:100%;height:clamp(340px,46vw,430px)}
+  .dr-hero canvas.dr-stage{display:block;width:100%;height:clamp(340px,46vw,430px)}
   .dr-hero::after{content:"";position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(180deg,transparent 48%,rgba(6,10,32,.86) 98%),
                linear-gradient(90deg,rgba(6,10,32,.86) 0%,transparent 46%)}
-  .dr-hero.dr-row::after{background:linear-gradient(180deg,transparent 40%,rgba(6,10,32,.86) 78%)}
-  .dr-text{position:absolute;inset:auto 0 0 0;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 22px}
+  @media (max-width:700px){ .dr-hero::after{background:linear-gradient(180deg,transparent 40%,rgba(6,10,32,.86) 78%)} }
+  .dr-text{position:absolute;inset:auto 0 0 0;z-index:3;pointer-events:none;text-shadow:0 2px 14px rgba(6,10,32,.9),0 0 3px rgba(6,10,32,.9);max-width:860px;margin:0 auto;padding:0 16px 22px}
   .dr-eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.78);font-weight:600}
   .dr-title{font-family:"Unbounded","Golos Text",system-ui,sans-serif;font-weight:700;
     font-size:clamp(1.9rem,6.4vw,3.4rem);line-height:1.05;margin:.25em 0 .3em;text-wrap:balance}
   .dr-sub{color:rgba(255,255,255,.78);max-width:34em;margin:0;font-size:.98rem}
+  .dr-bots{position:absolute;inset:0;z-index:2;pointer-events:none}
+  .dr-bot{position:absolute;pointer-events:auto;cursor:grab;touch-action:none;z-index:5;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  .dr-bot.dr-held{cursor:grabbing;z-index:50}
+  .dr-egg{position:absolute;width:0;height:0;z-index:5}
+  .dr-say{position:absolute;z-index:60;background:#fff;color:#0d1433;border-radius:12px;padding:6px 10px;
+    font:600 13px/1.2 "Golos Text",system-ui,sans-serif;white-space:nowrap;pointer-events:none;
+    transform:translate(-50%,-100%);box-shadow:0 2px 10px rgba(0,0,0,.28)}
 </style>
 <header class="dr-hero">
   <canvas class="dr-stage" role="img" aria-label="Анімація: людиноподібні роботи синхронно танцюють на сцені на тлі синіх і червоних світлових кубів"></canvas>
+  <div class="dr-bots" aria-hidden="true"></div>
   <div class="dr-text">
     <div class="dr-eyebrow">Web Summit 2026 · Лісабон</div>
     <h1 class="dr-title">Заголовок сторінки</h1>
@@ -44,17 +63,18 @@
 </header>
 <script>
 (function(){
-  const cv=document.querySelector('canvas.dr-stage'),g=cv.getContext('2d');
+  const hero=document.querySelector('.dr-hero'),cv=hero.querySelector('canvas.dr-stage'),g0=cv.getContext('2d');
+  const layer=hero.querySelector('.dr-bots');
   const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let W=0,H=0;
+  const DPR=Math.min(devicePixelRatio||1,2),BODY='#eef1f8',INK='#232b52',CORAL='#e8503f',BLUE='#3f7bff';
+  const SAY=['біп-буп','я не танцюю, я калібруюсь','де моя кава?','шторм — це не баг','постав мене на місце!','404: ритм не знайдено','лоскотно!','я тут головний спікер'];
+  const bots=[];let W=0,H=0,floorY=0,now=0;
   const hash=n=>{const x=Math.sin(n*127.1)*43758.5453;return x-Math.floor(x)};
-  function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);
-    W=r.width;H=r.height;cv.width=Math.round(W*d);cv.height=Math.round(H*d);g.setTransform(d,0,0,d,0,0)}
-  function limb(ax,ay,bx,by,w,c){g.strokeStyle=c;g.lineWidth=w;g.lineCap='round';g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke()}
-  function rr(x,y,w,h,r,c){g.fillStyle=c;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
-  function backdrop(t,fy){
-    g.fillStyle='#060a20';g.fillRect(0,0,W,H);
-    const c=Math.max(34,W/18),gap=c*.1,beat=.5+.5*Math.cos(Math.PI*2*t);
+
+  /* ---------- stage backdrop ---------- */
+  function backdrop(t){
+    const g=g0;g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#060a20';g.fillRect(0,0,W,H);
+    const c=Math.max(34,W/18),gap=c*.1,fy=floorY,beat=.5+.5*Math.cos(Math.PI*2*t);
     for(let j=0;j*c<fy;j++)for(let i=0;i*c<W;i++){
       const h=hash(i*31+j*17),red=hash(i*7+j*3+Math.floor(t/8))>.78;
       const a=.28+.5*h*(.55+.45*beat)+(red?.15:0);
@@ -65,60 +85,144 @@
     g.fillStyle=fl;g.fillRect(0,fy,W,H-fy);
     g.fillStyle='rgba(120,160,255,.35)';g.fillRect(0,fy,W,2);
   }
-  function robot(x,y,s,t){
-    const m=Math.floor(t/8)%3,sn=Math.sin(Math.PI*t),q=Math.tanh(3*sn),bob=.5-.5*Math.cos(Math.PI*2*t);
-    let sway=0,squat=.06*bob,stepX=0,lift=[0,0],arm;
-    if(m===0){sway=.09*sn;arm=sd=>{const u=2.3+sd*.5*sn;return[u,u+.5*Math.sin(Math.PI*t+1)]}}
-    else if(m===1){squat=.16*bob;arm=sd=>[1.25,1.25+1.5*(.5+.5*Math.sin(Math.PI*2*t+(sd>0?0:Math.PI)))]}
-    else{stepX=.22*q;lift=[Math.max(0,sn)*.12,Math.max(0,-sn)*.12];arm=sd=>[1.57,1.57+sd*1.45*q]}
-    const cx=x+(sway+stepX)*s,hipY=y-s*(1-squat),shY=hipY-.7*s,body='#e9edf7',dark='#2a3358';
-    g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(x+stepX*s,y+.03*s,.5*s,.07*s,0,0,7);g.fill();
+
+  /* ---------- one robot = one small canvas ---------- */
+  function limb(g,ax,ay,bx,by,w,s){g.lineCap='round';g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);
+    g.strokeStyle=INK;g.lineWidth=w+.05*s;g.stroke();g.strokeStyle=BODY;g.lineWidth=w;g.stroke()}
+  function box(g,x,y,w,h,r,fill,s){g.beginPath();g.roundRect(x,y,w,h,r);g.fillStyle=fill;g.fill();
+    if(s){g.strokeStyle=INK;g.lineWidth=.03*s;g.stroke()}}
+  function dot(g,x,y,r,c){g.fillStyle=c;g.beginPath();g.arc(x,y,r,0,7);g.fill()}
+
+  function drawBot(b,t){
+    const g=b.x,s=b.s,o=b.opt,CW=3*s,CH=3.4*s;
+    g.setTransform(DPR,0,0,DPR,0,0);g.clearRect(0,0,CW,CH);
+    t-=o.lag||0;
+    const pose=b.held?'held':(o.pose||'dance'),x=1.5*s;let y=3.2*s,lineY=0;
+    const sn=Math.sin(Math.PI*t),q=Math.tanh(3*sn),bob=.5-.5*Math.cos(Math.PI*2*t);
+    let sway=0,squat=.06*bob,stepX=0,lift=[0,0],arm,look=0,sit=false,shadow=true;
+    if(pose==='held'){const k=Math.sin(t*7);squat=-.03;lift=[.14+.07*k,.14-.07*k];shadow=false;
+      arm=sd=>[2.8+.15*k*sd,3+.25*k*sd];sway=Math.max(-.25,Math.min(.25,-b.vx*.02));b.vx*=.9}
+    else if(pose==='wave'){squat=.03*bob;look=.6;arm=sd=>sd>0?[2.3,2.7+.7*Math.sin(Math.PI*2*t)]:[.25,.35]}
+    else if(pose==='coffee'){squat=.04*bob;arm=sd=>sd>0?[.75,2.35]:[.2+.1*sn,.3]}
+    else if(pose==='umbrella'){sway=.1+.04*Math.sin(t*5);squat=.05;arm=sd=>sd>0?[2,2.6]:[.6,1.3]}
+    else if(pose==='sit'){sit=true;shadow=false;y-=.5*s;squat=0;look=Math.sin(t*.5);arm=sd=>[.45,.15]}
+    else if(pose==='peek'){const up=.5+.5*Math.sin(t*.6);shadow=false;lineY=y;squat=0;look=Math.sin(t*.9);
+      g.save();g.beginPath();g.rect(0,0,CW,lineY);g.clip();y=lineY+(1.72-.4*up)*s;arm=sd=>[.2,.2]}
+    else{ // dance: three moves, eight beats each; the "wrong" robot sometimes picks the next move
+      const m=(Math.floor(t/8)+(o.wrong&&Math.floor(t/4)%4===3?1:0))%3;
+      if(m===0){sway=.09*sn;arm=sd=>{const u=2.3+sd*.5*sn;return[u,u+.5*Math.sin(Math.PI*t+1)]}}
+      else if(m===1){squat=.16*bob;arm=sd=>[1.25,1.25+1.5*(.5+.5*Math.sin(Math.PI*2*t+(sd>0?0:Math.PI)))]}
+      else{stepX=.22*q;lift=[Math.max(0,sn)*.12,Math.max(0,-sn)*.12];arm=sd=>[1.57,1.57+sd*1.45*q]}
+    }
+    if(b.land){const dt=now-b.land;if(dt<600)squat+=.28*Math.exp(-dt/160)*Math.abs(Math.cos(dt/70));else b.land=0}
+    const cx=x+(sway+stepX)*s,hipY=sit?y-.08*s:y-s*(1-squat),shY=hipY-.7*s;
+    if(shadow){g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(x+stepX*s,y+.03*s,.5*s,.07*s,0,0,7);g.fill()}
     [-1,1].forEach((sd,k)=>{ // legs
-      const hx=cx+sd*.13*s,fx=x+stepX*s*.6+sd*.2*s,fyy=y-lift[k]*s,l=.5*s;
-      const dx=fx-hx,dy=fyy-hipY,d=Math.min(Math.hypot(dx,dy),2*l-.01),h=Math.sqrt(l*l-d*d/4);
-      const kx=hx+dx/2+sd*h*(dy/d)*.9,ky=hipY+dy/2-sd*h*(dx/d)*.9;
-      limb(hx,hipY,kx,ky,.15*s,body);limb(kx,ky,fx,fyy,.13*s,body);
-      rr(fx-.12*s,fyy-.05*s,.24*s,.1*s,.04*s,dark);
-      g.fillStyle=dark;g.beginPath();g.arc(kx,ky,.05*s,0,7);g.fill();
+      const hx=cx+sd*.13*s;let kx,ky,fx,fy;
+      if(sit){kx=hx+sd*.06*s;ky=y+.03*s;fx=kx+Math.sin(t*2.2+sd)*.14*s;fy=y+.48*s}
+      else{fx=x+stepX*s*.6+sd*.2*s;fy=y-lift[k]*s;const l=.5*s,dx=fx-hx,dy=fy-hipY,
+        d=Math.min(Math.hypot(dx,dy),2*l-.01),h=Math.sqrt(l*l-d*d/4);
+        kx=hx+dx/2+sd*h*(dy/d)*.9;ky=hipY+dy/2-sd*h*(dx/d)*.9}
+      limb(g,hx,hipY,kx,ky,.15*s,s);limb(g,kx,ky,fx,fy,.13*s,s);
+      box(g,fx-.12*s,fy-.05*s,.24*s,.1*s,.04*s,INK);dot(g,kx,ky,.05*s,INK);
     });
-    rr(cx-.24*s,shY-.04*s,.48*s,.78*s,.12*s,body);          // torso
-    rr(cx-.13*s,shY+.1*s,.26*s,.16*s,.05*s,dark);
-    g.fillStyle='#4f8bff';g.beginPath();g.arc(cx,shY+.18*s,.035*s,0,7);g.fill();
+    box(g,cx-.24*s,shY-.04*s,.48*s,.78*s,.12*s,BODY,s);            // torso
+    box(g,cx-.13*s,shY+.1*s,.26*s,.16*s,.05*s,INK);dot(g,cx,shY+.18*s,.035*s,'#4f8bff');
+    let HX=0,HY=0;
     [-1,1].forEach(sd=>{ // arms
-      const[a,b]=arm(sd),sx=cx+sd*.28*s,L=.34*s;
-      const ex=sx+sd*Math.sin(a)*L,ey=shY+.04*s+Math.cos(a)*L,hx=ex+sd*Math.sin(b)*L,hy=ey+Math.cos(b)*L;
-      limb(sx,shY+.04*s,ex,ey,.12*s,body);limb(ex,ey,hx,hy,.1*s,body);
-      g.fillStyle=dark;g.beginPath();g.arc(ex,ey,.045*s,0,7);g.arc(hx,hy,.06*s,0,7);g.fill();
+      const[a,c]=arm(sd),sx=cx+sd*.28*s,L=.34*s;
+      const ex=sx+sd*Math.sin(a)*L,ey=shY+.04*s+Math.cos(a)*L,hx=ex+sd*Math.sin(c)*L,hy=ey+Math.cos(c)*L;
+      limb(g,sx,shY+.04*s,ex,ey,.12*s,s);limb(g,ex,ey,hx,hy,.1*s,s);
+      dot(g,ex,ey,.045*s,INK);dot(g,hx,hy,.06*s,INK);if(sd>0){HX=hx;HY=hy}
     });
-    const hx0=cx+sway*s*.5;                                   // head
-    rr(hx0-.18*s,shY-.4*s,.36*s,.3*s,.1*s,body);
-    rr(hx0-.14*s,shY-.33*s,.28*s,.13*s,.06*s,'#10173a');
-    g.fillStyle='#6fb0ff';g.beginPath();g.arc(hx0-.06*s,shY-.265*s,.025*s,0,7);g.arc(hx0+.06*s,shY-.265*s,.025*s,0,7);g.fill();
+    if(o.acc==='bow'){g.fillStyle=CORAL;[-1,1].forEach(sd=>{g.beginPath();g.moveTo(cx,shY-.03*s);
+      g.lineTo(cx+sd*.13*s,shY-.1*s);g.lineTo(cx+sd*.13*s,shY+.04*s);g.fill()});dot(g,cx,shY-.03*s,.03*s,INK)}
+    const hx0=cx+sway*s*.5,top=shY-.4*s;                            // head
+    if(o.acc==='antenna'){const ax=hx0+.06*s*sn;g.strokeStyle=INK;g.lineWidth=.035*s;g.beginPath();
+      g.moveTo(hx0,top);g.lineTo(ax,top-.2*s);g.stroke();dot(g,ax,top-.22*s,.055*s,CORAL)}
+    box(g,hx0-.18*s,top,.36*s,.3*s,.1*s,BODY,s);
+    box(g,hx0-.14*s,top+.07*s,.28*s,.13*s,.06*s,'#10173a');
+    const ey=top+.135*s,ex=look*.03*s,blink=((t*.5+b.seed)%5)<.12&&pose!=='held';
+    [-1,1].forEach(sd=>{const px=hx0+sd*.06*s+ex;
+      if(blink){g.strokeStyle='#6fb0ff';g.lineWidth=.015*s;g.beginPath();g.moveTo(px-.025*s,ey);g.lineTo(px+.025*s,ey);g.stroke()}
+      else dot(g,px,ey,(pose==='held'?.04:.025)*s,pose==='held'?'#fff':'#6fb0ff')});
+    if(pose==='held')dot(g,hx0,top+.25*s,.022*s,INK);
+    if(o.acc==='shades'){box(g,hx0-.17*s,top+.06*s,.34*s,.13*s,.035*s,'#05060f');
+      g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=.02*s;g.beginPath();g.moveTo(hx0-.11*s,top+.1*s);g.lineTo(hx0-.05*s,top+.1*s);g.stroke()}
+    if(o.acc==='hat'){g.beginPath();g.moveTo(hx0-.13*s,top+.01*s);g.lineTo(hx0+.13*s,top+.01*s);g.lineTo(hx0+.02*s,top-.3*s);g.closePath();
+      g.fillStyle=CORAL;g.fill();g.strokeStyle=INK;g.lineWidth=.03*s;g.stroke();dot(g,hx0+.02*s,top-.31*s,.045*s,'#fff')}
+    if(o.acc==='phones'){g.strokeStyle=BLUE;g.lineWidth=.05*s;g.beginPath();g.arc(hx0,top+.14*s,.21*s,Math.PI,2*Math.PI);g.stroke();
+      [-1,1].forEach(sd=>box(g,hx0+sd*.2*s-.045*s,top+.07*s,.09*s,.16*s,.03*s,BLUE,s))}
+    if(pose==='coffee'){box(g,HX-.08*s,HY-.2*s,.16*s,.2*s,.02*s,'#fff',s);g.fillStyle=BLUE;g.fillRect(HX-.08*s,HY-.13*s,.16*s,.07*s);
+      g.strokeStyle='rgba(140,150,180,.8)';g.lineWidth=.02*s;for(let k=0;k<2;k++){const px=HX-.03*s+k*.06*s,w=Math.sin(t*3+k)*.02*s;
+        g.beginPath();g.moveTo(px,HY-.24*s);g.quadraticCurveTo(px+w+.03*s,HY-.3*s,px-w,HY-.38*s);g.stroke()}}
+    if(pose==='umbrella'){const an=.22+.1*Math.sin(t*5);g.save();g.translate(HX,HY);g.rotate(an);
+      g.strokeStyle=INK;g.lineWidth=.04*s;g.beginPath();g.moveTo(0,0);g.lineTo(0,-.45*s);g.stroke();
+      g.beginPath();g.arc(0,-.45*s,.55*s,Math.PI,2*Math.PI);g.closePath();g.fillStyle=CORAL;g.fill();g.lineWidth=.03*s;g.stroke();g.restore();
+      g.strokeStyle='#5b8cff';g.lineWidth=.025*s;for(let k=0;k<7;k++){const px=((k*.43+t*.9)%1)*CW,py=((k*.37+t*1.3)%1)*CH;
+        g.beginPath();g.moveTo(px,py);g.lineTo(px-.07*s,py+.18*s);g.stroke()}}
+    if(pose==='peek'){g.restore();[-1,1].forEach(sd=>{dot(g,x+sd*.36*s,lineY-.03*s,.085*s,INK);dot(g,x+sd*.36*s,lineY-.03*s,.06*s,BODY)})}
+  }
+
+  function setBot(b,s,fx,fy){ // (fx, fy) = where the feet stand, in the host's coordinates
+    b.s=s;const c=b.c,w=3*s,h=3.4*s;
+    c.style.width=w+'px';c.style.height=h+'px';c.style.left=(fx-1.5*s)+'px';
+    c.style.top=(fy-(b.opt.pose==='sit'?2.7:3.2)*s)+'px';
+    const pw=Math.round(w*DPR),ph=Math.round(h*DPR);if(c.width!==pw){c.width=pw;c.height=ph}
+  }
+  function say(b){
+    const el=document.createElement('div');el.className='dr-say';el.textContent=SAY[Math.floor(Math.random()*SAY.length)];
+    el.style.left=(b.c.offsetLeft+b.dx+1.5*b.s)+'px';el.style.top=(b.c.offsetTop+b.dy+.9*b.s)+'px';
+    b.c.parentNode.appendChild(el);setTimeout(()=>el.remove(),1700);
+  }
+  function makeBot(host,opt){
+    const c=document.createElement('canvas');c.className='dr-bot';host.appendChild(c);
+    const b={c,x:c.getContext('2d'),s:20,dx:0,dy:0,vx:0,held:false,land:0,opt,seed:bots.length*1.7+1,vis:true};
+    const move=()=>{c.style.transform=`translate(${b.dx}px,${b.dy}px)`;if(still)drawBot(b,.6)};
+    let sx,sy,ox,oy,moved;
+    c.addEventListener('pointerdown',e=>{c.setPointerCapture(e.pointerId);b.held=true;moved=false;
+      sx=e.clientX;sy=e.clientY;ox=b.dx;oy=b.dy;c.classList.add('dr-held');e.preventDefault();if(still)drawBot(b,.6)});
+    c.addEventListener('pointermove',e=>{if(!b.held)return;const nx=ox+e.clientX-sx;b.vx=nx-b.dx;b.dx=nx;b.dy=oy+e.clientY-sy;
+      if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>4)moved=true;move()});
+    const up=()=>{if(!b.held)return;b.held=false;c.classList.remove('dr-held');b.land=now;if(!moved)say(b);if(still)drawBot(b,.6)};
+    c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+    c.addEventListener('dblclick',()=>{b.dx=b.dy=0;move()});
+    if('IntersectionObserver' in window)new IntersectionObserver(en=>{b.vis=en[0].isIntersecting},{rootMargin:'80px'}).observe(c);
+    bots.push(b);return b;
+  }
+
+  /* ---------- header troupe ---------- */
+  const ACC=['antenna','shades','','hat','phones','bow','antenna','','shades'];
+  const troupe=ACC.map((acc,i)=>makeBot(layer,{acc,lag:i===6?.5:0,wrong:i===2}));
+  function layout(){
+    const r=cv.getBoundingClientRect();W=r.width;H=r.height;
+    cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+    if(W>700){ // nine robots in two rows, right of the title
+      floorY=H*.6;const span=Math.min(W*.5,560),mid=Math.min(W*.7,W-40-span*.62),s=Math.min(H*.3,span/5.2),gy=H*.86;
+      troupe.forEach(b=>b.c.hidden=false);
+      for(let i=0;i<5;i++)setBot(troupe[i],s*.78,mid+(i-2)*span/5,gy-s*.34);
+      for(let i=0;i<4;i++)setBot(troupe[5+i],s,mid+(i-1.5)*span/4.4,gy);
+    }else{     // phone: three robots in one row, standing just above the title block
+      const txt=hero.querySelector('.dr-text'),gy=Math.max(H*.3,(txt?txt.offsetTop:H*.55)-20);
+      const s=Math.min((gy-10)/2.5,W*.92/3/1.8),sp=Math.max(s*1.8,W*.3);floorY=gy-s*.3;
+      troupe.forEach((b,i)=>{b.c.hidden=i>2;if(i<3)setBot(b,s,W/2+(i-1)*sp,gy)});
+    }
+    if(still)frame(300);
+  }
+  function eggs(){
+    document.querySelectorAll('.dr-egg').forEach(el=>{
+      if(el.firstChild)return;
+      setBot(makeBot(el,{pose:el.dataset.pose||'dance',acc:el.dataset.acc||''}),+el.dataset.size||26,0,0)});
+    if(still)frame(300);
   }
   function frame(ms){
-    const t=ms/1000*1.9,box=cv.parentElement;
-    const txt=box.querySelector('.dr-text,.hero-text'),ttl=box.querySelector('h1');
-    const right=Math.min(W-28,(W+860)/2);
-    const room=right-(ttl?ttl.getBoundingClientRect().left-cv.getBoundingClientRect().left+ttlWidth(ttl):W)-70;
-    const side=W>700&&room>=300;box.classList.toggle('dr-row',!side);
-    if(side){ // nine robots in two rows, in the free space right of the title
-      backdrop(t,H*.6);
-      const span=Math.min(room,480),mid=right-span/2,sp=span/4,s=Math.min(H*.26,sp/1.3),gy=H*.88;
-      for(let i=0;i<5;i++)robot(mid+(i-2)*sp,gy-s*.62,s*.72,t);   // back row, in the gaps
-      for(let i=0;i<4;i++)robot(mid+(i-1.5)*sp,gy,s,t);
-    }else{    // no room beside the title: one spaced row above it (9 on desktop, 3 on phones)
-      const n=W>700?9:3,rowW=Math.min(W*.92,900);
-      const gy=Math.max(H*.3,(txt?txt.offsetTop:H*.55)-10);
-      const s=Math.min((gy-14)/2.1,rowW/n/1.8),sp=Math.max(s*1.8,rowW/n);
-      backdrop(t,gy-s*.3);
-      for(let i=0;i<n;i++)robot(W/2+(i-(n-1)/2)*sp,gy,s,t);
-    }
+    now=ms;const t=ms/1000*1.9;backdrop(t);
+    bots.forEach(b=>{if(b.vis&&!b.c.hidden)drawBot(b,t)});
     if(!still)requestAnimationFrame(frame);
   }
-  // width of the title's actual text, not of its block
-  function ttlWidth(el){const r=document.createRange();r.selectNodeContents(el);return r.getBoundingClientRect().width}
-  size();new ResizeObserver(()=>{size();if(still)frame(300)}).observe(cv);
-  if(still)frame(300);else requestAnimationFrame(frame);
+  layout();new ResizeObserver(layout).observe(cv);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',eggs);else eggs();
+  if(!still)requestAnimationFrame(frame);
 })();
 </script>
 <!-- HEADER:END -->
@@ -130,8 +234,10 @@
     <li>Встав блок на початок <code>&lt;body&gt;</code> своєї сторінки.</li>
     <li>Зміни три рядки тексту всередині <code>.dr-text</code>: надзаголовок, заголовок і підпис.</li>
     <li>Шрифти Unbounded і Golos Text підключаються з Google Fonts (рядок <code>&lt;link&gt;</code> у <code>&lt;head&gt;</code>). Без них заголовок теж працює, просто системним шрифтом.</li>
+    <li>Пасхалка: встав <code>&lt;span class="dr-egg" data-pose="wave"&gt;&lt;/span&gt;</code> у будь-який елемент із <code>position:relative</code>. Пози: <code>dance</code>, <code>wave</code>, <code>coffee</code>, <code>umbrella</code>, <code>sit</code>, <code>peek</code>.</li>
   </ol>
-  <p>Анімація намальована на canvas, файлів-картинок не потребує. Якщо в системі ввімкнено «зменшити рух», показується нерухомий кадр.</p>
+  <p>Роботів можна хапати мишкою або пальцем і тягати по сторінці. Клік — робот щось каже, подвійний клік повертає його на місце. Якщо в системі ввімкнено «зменшити рух», роботи стоять нерухомо, але тягати їх усе одно можна.</p>
+  <div class="demo"><span class="dr-egg" data-pose="wave" data-acc="hat" data-size="26" style="left:40px;bottom:0"></span><p>Ось приклад пасхалки.</p></div>
 </div>
 </body>
 </html>
